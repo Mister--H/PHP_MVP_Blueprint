@@ -1,0 +1,3 @@
+[2024-03-15T03:30:40.696247+11:00] databaseLogger.ERROR: Connection error: SQLSTATE[HY000] [2002] No such file or directory [] []
+[2024-03-15T03:35:24.148856+11:00] databaseLogger.ERROR: Connection error: SQLSTATE[HY000] [2002] No such file or directory [] []
+[2024-03-15T03:35:26.154510+11:00] databaseLogger.ERROR: Connection error: SQLSTATE[HY000] [2002] No such file or directory [] []
