@@ -1,50 +1,72 @@
 <?php
-error_reporting(E_ALL);
+// Improved error reporting setup
 ini_set('display_errors', 1);
+error_reporting(E_ALL);
 
 require_once __DIR__ . '/../app/bootstrap.php';
 
 use App\Controllers\UserController;
 use App\Models\User;
-use App\Models\Database; // Assuming you have a Database class to instantiate $db
+use App\Models\Database;
 
-$db = new Database(); // Make sure this is correctly set up to return a database connection
+$db = new Database();
 
-// Example routing logic
-$path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH); // Get the current path requested by the user
+// Simplify routing and handling logic
+handleRequest();
 
-// Basic routing
-switch ($path) {
-    case '/':
-        renderView('home');
-        break;
-    case '/register':
-        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            $userModel = new User($db); // Ensure $db is properly instantiated
-            $userController = new UserController($userModel);
-            
-            $name = trim(htmlspecialchars($_POST['name'] ?? '', ENT_QUOTES, 'UTF-8'));
-            $email = filter_input(INPUT_POST, 'email', FILTER_SANITIZE_EMAIL);
-            $password = $_POST['password']; // Ensure this is sanitized and validated
+function handleRequest() {
+    $path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
 
-            $result = $userController->register($name, $email, $password);
+    switch ($path) {
+        case '/':
+            renderView('home');
+            break;
+        case '/register':
+            handleRegister();
+            break;
+        default:
+            renderView('404'); // Ensure a 404 view exists
+    }
+}
 
-            if (isset($result['error'])) {
-                // Handle error, perhaps redirect back to form with an error message
-                echo $result['error']; // Consider a more secure way to display errors
-            } else {
-                // Handle success, perhaps redirecting to a login page or showing a success message
-                echo 'Registration successful. Token: ' . $result['token']; // Consider a more secure way to handle token
-            }
+function handleRegister() {
+    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+        processRegistration();
+    } else {
+        renderView('auth/register'); // Show registration form for GET requests
+    }
+}
 
-            exit; // Prevent further processing
-        } else {
-            // GET request: Show the registration form
-            renderView('auth/register');
-        }
-        break;
-    default:
-        // 404 page or redirect to home
-        renderView('404'); // Make sure you have a 404 view
-        break;
+function processRegistration() {
+    $db = getDatabaseConnection(); // Ensure database connection
+    $userController = new UserController(new User($db));
+
+    // Sanitize and validate inputs
+    $name = sanitizeInput($_POST['name'] ?? '');
+    $email = filter_var($_POST['email'] ?? '', FILTER_SANITIZE_EMAIL);
+    $password = $_POST['password']; // Consider more robust sanitation/validation
+
+    $result = $userController->register($name, $email, $password);
+
+    // Handle registration result
+    if (isset($result['error'])) {
+        echo $result['error']; // Redirect or display error securely
+    } else {
+        echo 'Registration successful. Token: ' . $result['token']; // Secure token handling
+    }
+    exit;
+}
+
+function sanitizeInput($input) {
+    return trim(htmlspecialchars($input, ENT_QUOTES, 'UTF-8'));
+}
+
+function getDatabaseConnection() {
+    // Assuming Database class exists and returns a PDO connection
+    return new Database();
+}
+
+function renderView($view) {
+    // Assuming this function exists to include view files
+    include "../views/{$view}.php";
 }
