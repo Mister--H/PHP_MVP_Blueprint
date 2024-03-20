@@ -40,4 +40,50 @@ class User {
             }
         }
 
+        public function verifyUserCredentials($email, $password) {
+            $this->db->query("SELECT * FROM users WHERE email = :email");
+            $this->db->bind(':email', $email);
+            $user = $this->db->single();
+
+            if ($user && password_verify($password, $user['password'])) {
+                return $user; // Return the user data if credentials are valid
+            } else {
+                return false; // Return false if credentials are invalid
+            }
+        }
+        public function storeRememberToken($userId, $token) {
+            $hashedToken = password_hash($token, PASSWORD_DEFAULT);
+            $expiresAt = date('Y-m-d H:i:s', strtotime('+30 days')); // Token expires in 30 days
+
+            $this->db->query("INSERT INTO remember_tokens (user_id, token, expires_at) VALUES (:user_id, :token, :expires_at)");
+            $this->db->bind(':user_id', $userId);
+            $this->db->bind(':token', $hashedToken);
+            $this->db->bind(':expires_at', $expiresAt);
+            $this->db->execute();
+        }
+
+
+        public function validateRememberToken($token) {
+            $this->db->query("SELECT user_id, token FROM remember_tokens WHERE expires_at > NOW()");
+            $tokens = $this->db->resultSet();
+
+            foreach ($tokens as $tokenRow) {
+                if (password_verify($token, $tokenRow['token'])) {
+                    return $tokenRow['user_id']; // Return user ID if token is valid
+                }
+            }
+
+            return false;
+        }
+
+
+        public function getUserById($userId) {
+            $this->db->query("SELECT * FROM users WHERE id = :userId");
+            $this->db->bind(':userId', $userId);
+            return $this->db->single();
+        }
+
+
+
+
 }

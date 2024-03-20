@@ -37,11 +37,15 @@ class UserController {
             ];
 
             $jwt = JWT::encode($payload, $this->jwtSecretKey, 'HS256');
+            $_SESSION['user_id']=$user;
             return ['token' => $jwt];
         } else {
             return ['error' => 'Registration failed.'];
         }
-}
+    }
+
+
+
 
 
 }
