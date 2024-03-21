@@ -1,4 +1,4 @@
-TODO: Add similar categories to database
+Done: Add similar categories to database
 TODO: add Name for settings and can get settings by name for single store
 TODO: No duplicate for settings checked by Name 
 TODO: Add user roles

@@ -41,22 +41,22 @@ class Auth {
         return ['token' => $jwt];
     }
 
-    static function isLoggedIn() {
-    if (isset($_SESSION['user_id'])) {
-        // User is logged in through the session
-        return true;
-    } elseif (isset($_COOKIE['remember'])) {
-        // Remember me cookie exists, validate it
-        $userId = $this->userModel->validateRememberToken($_COOKIE['remember']);
-        
-        if ($userId) {
-            // Valid token, log the user in by setting the session
-            $_SESSION['user_id'] = $this->userModel->getUserById($userId);
+    public function isLoggedIn() {
+        if (isset($_SESSION['user_id'])) {
+            // User is logged in through the session
             return true;
+        } elseif (isset($_COOKIE['remember'])) {
+            // Remember me cookie exists, validate it
+            $userId = $this->userModel->validateRememberToken($_COOKIE['remember']);
+            
+            if ($userId) {
+                // Valid token, log the user in by setting the session
+                $_SESSION['user_id'] = $this->userModel->getUserById($userId);
+                return true;
+            }
         }
-    }
 
-    return false;
-}
+        return false;
+    }
 
 }

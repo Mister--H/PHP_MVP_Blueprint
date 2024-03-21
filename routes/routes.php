@@ -2,11 +2,18 @@
 
 use App\Core\Router;
 use App\Core\Auth;
+use App\Models\User;
 use App\Controllers\DashboardController;
 use App\Controllers\WooController;
+use App\Models\Database;
 // Assume DashboardController and WooController are created for dashboard and WooCommerce routes
 
 $router = new Router;
+// Assuming Database class is correctly set up to return a PDO connection
+$database = new Database();
+$userModel = new User($database);
+
+$auth = new Auth($userModel);
 
 // Public routes
 $router->get('', 'PageController@home');
@@ -33,7 +40,9 @@ $router->group('dashboard', function($router) {
     $router->get('dashboard/add-content', 'ContentController@showStoreContent');
     $router->post('dashboard/add-content', 'ContentController@storeContent');
     
-}, ['middleware' => function() { return Auth::isLoggedIn(); }]);
+}, ['middleware' => function() use ($auth) {
+    return $auth->isLoggedIn();
+    }]);
 
 // Save $router for use in the front controller
 return $router;

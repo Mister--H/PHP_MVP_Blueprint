@@ -61,6 +61,8 @@ class WooController {
         $productData = $this->extractProductData($crawler, $settings, $brand, $woocommerce, $productUrl, $sku, $price); 
         $response = $this->publishProductToWooCommerce($productData, $woocommerce);   
 
+        $this->WooModel->newProduct($store, $productUrl, $this->userId);
+
         $this->showaddProduct($response);
        
     }
@@ -90,104 +92,15 @@ class WooController {
     public function extractProductData($crawler, $settings, $brand, $woocommerce, $productUrl, $sku, $price){
         try {
         $category = $crawler->filter($settings['category'])->text();
-        switch ($category) {
-            case 'مینی فرز ( مینی سنگ )':
-                $category = 'مینی فرز';
-                break;
-            case 'کارواش صنعتی':
-                $category = 'کارواش';
-                break;
-            case 'مینی فرز دیمر دار':
-                $category = 'مینی فرز';
-                break;
-            case 'فرز انگشتی و مینیاتوری':
-                $category = 'فرز انگشتی';
-                break;
-            case 'مینی فرز شارژی':
-                $category = 'مینی فرز';
-                break;
-            case 'مینی فرز دسته بلند':
-                $category = 'مینی فرز';
-                break;
-            case 'فرز‌ آهنگری':
-                $category = 'فرز آهنگری';
-                break;
-            case 'سنگ فرز':
-                $category = 'فرز سنگ بری';
-                break;
-            case 'دستگاه پولیش':
-                $category = 'پولیش';
-                break;
-            case 'دستگاه پولیش اوربیتال':
-                $category = 'پولیش';
-                break;
-            case 'فارسی بر کشویی':
-                $category = 'اره فارسی بر';
-                break;
-            case 'بتن کن و چکش تخریب':
-                $category = 'بتن کن';
-                break;
-            case 'اور فرز مشتی':
-                $category = 'اور فرز نجاری';
-                break;
-            case 'فرز نجاری ( اور فرز )':
-                $category = 'اور فرز نجاری';
-                break;
-            case 'اره افقی بر ( اره همه کاره )':
-                $category = 'اره افقی';
-                break;
-            case 'اره عمود بر ( اره چکشی )':
-                $category = 'اره عمود بر';
-                break;
-            case 'اره عمودبر (اره چکشی) گیربکسی':
-                $category = 'اره عمود بر';
-                break;
-            case 'سنباده لرزان گرد':
-                $category = 'سنباده لرزان';
-                break;
-            case 'سنباده لرزان مشتی':
-                $category = 'سنباده لرزان';
-                break;
-            case 'سنباده لرزان تخت':
-                $category = 'سنباده لرزان';
-                break;
-            case 'اره برقی':
-                $category = 'اره زنجیری';
-                break;
-            case 'شمشاد زن برقی':
-                $category = 'شمشاد زن';
-                break;
-            case 'بکس برقی و بکس شارژی':
-                $category = 'آچار بکس برقی و شارژی';
-                break;
-            case 'اره گرد بر ( اره دیسکی )':
-                $category = 'اره گرد بر';
-                break;
-            case 'بلوور ( دمنده و مکنده )':
-                $category = 'بلوور (دمنده-مکنده)';
-                break;
-            case 'بلوور شارژی':
-                $category = 'بلوور (دمنده-مکنده)';
-                break;
-            case 'رنده برقی نجاری':
-                $category = 'رنده نجاری';
-                break;
-            case 'قیچی ورق بر برقی':
-                $category = 'قیچی برقی';
-                break;
-            case 'سنباده لرزان گرد':
-                $category = 'سنباده لرزان';
-                break;
-            case 'کارواش خانگی و صنعتی':
-                $category = 'کارواش';
-                break;
-            
-            default:
-                
-                break;
-        }
-        $category = str_replace(' ', '+', $category);
+        $category = str_replace(' ', '+', $category); // For URL compatibility
         $woo_cats = $woocommerce->get('products/categories?search=' . $category);
+        // Inside your WooController method where the error occurs
+        if (empty($woo_cats) || isset($woo_cats->errors)) {
+            $category = str_replace('+', ' ', $category);
+            $mappedCategory = $this->WooModel->getTargetCategory(5, 10, $category);
+            $mappedCategory = str_replace(' ', '+', $mappedCategory);
+            $woo_cats = $woocommerce->get('products/categories?search=' . $mappedCategory);
+        }
         $catID = $woo_cats[0]->id;
         $display_category = str_replace('+', ' ', $category);
         $title = $crawler->filter($settings['title'])->text();
@@ -202,7 +115,7 @@ class WooController {
             'value' => $brand,
         ];
         $weight = ''; // Initialize outside the loop
-
+         
         foreach ($attributes as $attribute) {
             if ($attribute['label'] === 'وزن' || $attribute['label'] === 'وزن دقیق') {
                 // Check if the value includes 'کیلوگرم' or 'گرم' and convert accordingly
@@ -218,7 +131,10 @@ class WooController {
                 break; // Exit the loop once the weight is found
             }
         }
-      
+
+        $weight = number_format((float)$weight, 1, '.', '');
+
+
         $imgUrls = $crawler->filter($settings['gallery'])->each(function (Crawler $node) {
             return $node->attr('src');
         });
@@ -258,6 +174,7 @@ class WooController {
         return $product_data = [
             'name' => $title,
             'type' => 'simple',
+            'status' => 'draft',
             'regular_price' => strval($price),
             'description' => htmlspecialchars_decode($content['product_content']),
             'weight' => $weight,

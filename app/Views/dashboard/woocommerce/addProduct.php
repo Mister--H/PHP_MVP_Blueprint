@@ -2,6 +2,12 @@
     <div class="row">
         <!-- Form for Adding New Product -->
         <div class="col-md-6">
+            <?php if (isset($_SESSION['error'])): ?>
+    <div class="alert alert-danger">
+        <?php print_r($_SESSION['error']); ?>
+    </div>
+    <?php unset($_SESSION['error']); // Remove the message after displaying it ?>
+<?php endif; ?>
             <?php if (isset($message['error'])) { 
                 echo '<div class="alert alert-danger" role="alert">' . $message['error'] . '</div>';
             } elseif (isset($message['success'])) {
